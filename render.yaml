@@ -1,0 +1,12 @@
+# Render Configuration for Node.js/Express Backend
+
+version: "1.0"
+
+services:
+  - type: web
+    name: "misinformation-analyzer"
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    healthCheckPath: "/health"
