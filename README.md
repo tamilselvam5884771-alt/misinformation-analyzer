@@ -1,21 +1,29 @@
-# MIA News Analyzer (Client + Server)
+# AI Misinformation Analyzer (MIA)
 
-Clean folder structure:
-- `client/` (React + Vite UI)
-- `server/` (Express API: `POST /analyze`)
+A premium real-time news credibility analyzer powered by Gemini AI.
 
-## Run (separate local hosts)
+## Project Structure
 
-1. Backend (port `5000`):
-   - `npm run backend`
-2. Frontend (port `3000`):
-   - `npm run dev`
+- `client/`: React + Vite frontend dashboard.
+- `server/`: Express backend API for credibility analysis.
+- `tools/`: Utility scripts and smoke tests.
+- `archive/`: Legacy build files and archives.
 
-## Endpoints
+## Getting Started
 
-- Backend Health: `http://localhost:5000/`
-- Backend Analyze: `http://localhost:5000/analyze`
+1.  **Install Dependencies**:
+    `npm run install:all`
+2.  **Configuration**:
+    - Create a `.env` file in the root.
+    - Set `API_KEY` (Gemini) and `GNEWS_API_KEY`.
+3.  **Run Development Servers**:
+    - Frontend: `npm run dev:client`
+    - Backend: `npm run dev:server`
 
-## Notes
+## Deployment
 
-- Gemini may rate-limit (429). The server falls back safely if Gemini fails.
+- **Frontend**: Deployed on **Vercel**.
+- **Backend**: Deployed on **Render**.
+
+> [!IMPORTANT]
+> Ensure `VITE_BACKEND_URL` is set in Vercel to point to your Render backend.
