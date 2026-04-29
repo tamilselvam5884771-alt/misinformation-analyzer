@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Misinformation Analyzer</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- AOS Animation CSS -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --secondary: #06B6D4;
+            --accent: #F59E0B;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --bg-grad-start: #eef2ff;
+            --bg-grad-end: #e0f2fe;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-grad-start) 0%, var(--bg-grad-end) 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Glassmorphism utilities */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Nav */
+        .navbar {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.4);
+        }
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Buttons */
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
+            border: none;
+            color: white;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.6);
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            padding: 120px 0 80px;
+            text-align: center;
+            position: relative;
+        }
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+        .hero-title span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: #64748b;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Input Area */
+        .input-wrapper {
+            max-width: 750px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .claim-input {
+            width: 100%;
+            padding: 20px 180px 20px 25px;
+            border-radius: 16px;
+            border: 2px solid rgba(79, 70, 229, 0.1);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            resize: none;
+            height: 70px;
+            overflow: hidden;
+        }
+        .claim-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.15);
+            background: #fff;
+        }
+        .analyze-btn {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            bottom: 8px;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Loading Spinner */
+        .spinner-wrapper {
+            display: none;
+            margin-top: 3rem;
+        }
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(79, 70, 229, 0.2);
+            border-bottom-color: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Analysis Panel */
+        #analysisContainer {
+            display: none;
+            margin-top: 4rem;
+        }
+
+        /* Circular Progress Bar */
+        .circular-progress-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            flex-shrink: 0;
+            margin: 10px 0;
+        }
+        .circular-progress {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        .circular-progress-bg {
+            fill: none;
+            stroke: rgba(226, 232, 240, 0.6);
+            stroke-width: 8;
+        }
+        .circular-progress-fill {
+            fill: none;
+            stroke: var(--success);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 263.89;
+            stroke-dashoffset: 263.89;
+            transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.5s ease, filter 0.5s ease;
+            filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.4));
+        }
+        .circular-progress-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            color: var(--dark);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .keyword-chip {
+            background: rgba(245, 158, 11, 0.15);
+            color: #b45309;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin: 4px;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .category-chip {
+            background: rgba(6, 182, 212, 0.15);
+            color: #0369a1;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        /* Trusted Sources */
+        .source-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin: 0 auto 10px;
+        }
+
+        /* Stats Dashboard */
+        .stats-section {
+            padding: 4rem 0;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(6, 182, 212, 0.05));
+            border-top: 1px solid rgba(255,255,255,0.5);
+            border-bottom: 1px solid rgba(255,255,255,0.5);
+            margin: 4rem 0;
+        }
+        .stat-card {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary);
+            font-family: 'Outfit', sans-serif;
+        }
+        
+        /* Features */
+        .feature-icon-lg {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        /* Education */
+        .edu-card i {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 4rem 0 2rem;
+            margin-top: auto;
+        }
+        footer .footer-title {
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        footer a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        footer a:hover {
+            color: var(--secondary);
+        }
+        
+        .social-links a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            color: white;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+        .social-links a:hover {
+            background: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        /* Floating elements in background */
+        .bg-shape {
+            position: absolute;
+            filter: blur(60px);
+            z-index: -1;
+            opacity: 0.5;
+            border-radius: 50%;
+        }
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--secondary);
+            top: -50px;
+            left: -100px;
+        }
+        .shape-2 {
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            top: 20%;
+            right: -150px;
+        }
+        .shape-3 {
+            width: 250px;
+            height: 250px;
+            background: var(--accent);
+            bottom: -50px;
+            left: 20%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                <i class="fas fa-shield-halved text-primary"></i>
+                MisinfoX
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav gap-3">
+                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#education">Education</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-gradient btn-sm text-white px-4" href="#analyze">Try Now</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="analyze" style="position: relative; z-index: 1;">
+        <div class="bg-shape shape-1"></div>
+        <div class="bg-shape shape-2"></div>
+        
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-9" data-aos="fade-up">
+                    <div class="mb-4 text-primary">
+                        <i class="fas fa-brain fa-4x" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                    </div>
+                    <h1 class="hero-title">AI Misinformation <span>Analyzer</span></h1>
+                    <p class="hero-subtitle">Instantly verify claims, news headlines, and social media posts. Our advanced AI scans across verified sources to detect potential misinformation in real-time.</p>
+                    
+                    <div class="input-wrapper">
+                        <textarea class="claim-input" id="claimInput" placeholder="Paste a headline, tweet, or claim here to analyze..."></textarea>
+                        <button class="btn btn-gradient analyze-btn" id="analyzeBtn">
+                            <i class="fas fa-search"></i> Analyze
+                        </button>
+                    </div>
+
+                    <div class="spinner-wrapper text-center" id="loadingSpinner">
+                        <span class="loader"></span>
+                        <p class="mt-3 font-monospace text-muted">Running AI models... cross-referencing databases...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analysis Panel (Hidden initially) -->
+    <section class="container" id="analysisContainer">
+        <div class="row justify-content-center" data-aos="zoom-in">
+            <div class="col-lg-10">
+                <div class="glass-card p-4 p-md-5 mb-5">
+                    <div class="row g-4">
+                        <!-- Main Result -->
+                        <div class="col-md-7 border-end border-light">
+                            <h3 class="fw-bold mb-4">Analysis Results</h3>
+                            <div class="d-flex align-items-center gap-4 mb-4">
+                                <div class="circular-progress-container">
+                                    <svg class="circular-progress" viewBox="0 0 100 100">
+                                        <circle class="circular-progress-bg" cx="50" cy="50" r="42"></circle>
+                                        <circle class="circular-progress-fill" id="scoreCircle" cx="50" cy="50" r="42"></circle>
+                                    </svg>
+                                    <div class="circular-progress-value" id="scoreText">0%</div>
+                                </div>
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="text-muted fw-semibold" style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px;">Credibility Score</div>
+                                    <div id="statusBadgeContainer">
+                                        <!-- Status badge populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <p class="fs-5" id="explanationText"></p>
+                        </div>
+
+                        <!-- Details & Sources -->
+                        <div class="col-md-5 ps-md-4">
+                            <h5 class="fw-bold mb-3"><i class="fas fa-tags me-2 text-secondary"></i>Detection Details</h5>
+                            <div class="mb-4">
+                                <span class="d-block text-muted small mb-2">Category Detected:</span>
+                                <span class="category-chip" id="categoryChip"><i class="fas fa-folder-open me-1"></i> General</span>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <span class="d-block text-muted small mb-2">Suspicious Keywords Highlights:</span>
+                                <div id="keywordsContainer">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <h5 class="fw-bold mb-3 mt-4"><i class="fas fa-shield-check me-2 text-primary"></i>Trusted Sources Check</h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-light text-dark border p-2"><i class="fas fa-globe me-1 text-primary"></i> WHO</span>
+                                <span class="badge bg-light text-dark border p-2"><i class="fas fa-plus-square me-1 text-danger"></i> CDC</span>
+                                <span class="badge bg-light text-dark border p-2"><i class="fas fa-newspaper me-1 text-secondary"></i> Reuters</span>
+                                <span class="badge bg-light text-dark border p-2"><i class="fas fa-tv me-1 text-dark"></i> BBC</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Dashboard -->
+    <section class="stats-section">
+        <div class="bg-shape shape-3"></div>
+        <div class="container">
+            <div class="row g-4 text-center">
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="0">
+                    <div class="stat-card">
+                        <div class="stat-number"><span class="counter" id="statTotal" data-target="0">0</span>+</div>
+                        <div class="text-muted fw-semibold">Total Claims Analyzed</div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-card">
+                        <div class="stat-number text-danger"><span class="counter" id="statPrevented" data-target="0">0</span></div>
+                        <div class="text-muted fw-semibold">Misinformation Instances Prevented</div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-card">
+                        <div class="stat-number text-success"><span class="counter" id="statAccuracy" data-target="0">0</span>%</div>
+                        <div class="text-muted fw-semibold">Detection Accuracy Rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="container py-5" id="features">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <h2 class="fw-bold">How MisinfoX Protects You</h2>
+            <p class="text-muted">Enterprise-grade AI combined with human-verified fact-checking networks.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="0">
+                <div class="glass-card p-4 h-100 text-center">
+                    <i class="fas fa-brain feature-icon-lg"></i>
+                    <h5 class="fw-bold mt-3">AI-Powered Analysis</h5>
+                    <p class="text-muted small">Deep learning models trained on millions of verified facts and debunked myths.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="glass-card p-4 h-100 text-center">
+                    <i class="fas fa-tachometer-alt feature-icon-lg"></i>
+                    <h5 class="fw-bold mt-3">Credibility Scoring</h5>
+                    <p class="text-muted small">Get a clear, color-coded reliability score for any claim instantly.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="glass-card p-4 h-100 text-center">
+                    <i class="fas fa-check-double feature-icon-lg"></i>
+                    <h5 class="fw-bold mt-3">Fact-Check Sources</h5>
+                    <p class="text-muted small">Direct links and cross-references to verified reports from WHO, Reuters, and more.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="glass-card p-4 h-100 text-center">
+                    <i class="fas fa-bolt feature-icon-lg"></i>
+                    <h5 class="fw-bold mt-3">Real-Time Detection</h5>
+                    <p class="text-muted small">Analyze emerging narratives before they go viral across social media.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Education Section -->
+    <section class="container py-5 mt-4 mb-5" id="education">
+        <div class="row align-items-center">
+            <div class="col-lg-5 mb-4 mb-lg-0" data-aos="fade-right">
+                <h2 class="fw-bold mb-4">How Misinformation Spreads</h2>
+                <p class="text-muted mb-4">Understanding the mechanics of false information is the first step in protecting yourself. Bad actors use specific psychological triggers to make you share before you think.</p>
+                <button class="btn btn-outline-primary rounded-pill px-4" onclick="document.getElementById('analyze').scrollIntoView({behavior:'smooth'})">Try the Analyzer</button>
+            </div>
+            <div class="col-lg-7">
+                <div class="row g-3">
+                    <div class="col-sm-6" data-aos="fade-up" data-aos-delay="100">
+                        <div class="glass-card p-4 edu-card h-100">
+                            <i class="fas fa-mouse-pointer"></i>
+                            <h5 class="fw-bold">Clickbait Headlines</h5>
+                            <p class="text-muted small mb-0">Exaggerated or misleading titles designed to exploit curiosity gap.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6" data-aos="fade-up" data-aos-delay="200">
+                        <div class="glass-card p-4 edu-card h-100">
+                            <i class="fas fa-heart-crack"></i>
+                            <h5 class="fw-bold">Emotional Manipulation</h5>
+                            <p class="text-muted small mb-0">Content designed to trigger anger, fear, or extreme validation.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6" data-aos="fade-up" data-aos-delay="300">
+                        <div class="glass-card p-4 edu-card h-100">
+                            <i class="fas fa-user-ninja"></i>
+                            <h5 class="fw-bold">Fake Experts</h5>
+                            <p class="text-muted small mb-0">Using unverified credentials to establish false authority on complex topics.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6" data-aos="fade-up" data-aos-delay="400">
+                        <div class="glass-card p-4 edu-card h-100">
+                            <i class="fas fa-camera-rotate"></i>
+                            <h5 class="fw-bold">Deceptive Imagery</h5>
+                            <p class="text-muted small mb-0">Out-of-context photos or AI-generated deepfakes shaping false narratives.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="footer-title d-flex align-items-center gap-2">
+                        <i class="fas fa-shield-halved text-primary"></i> MisinfoX
+                    </div>
+                    <p class="small text-muted mb-4">Empowering individuals to navigate the digital world with confidence through AI-driven truth verification.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2"></div>
+                <div class="col-6 col-lg-3">
+                    <h5 class="footer-title fs-6">Project</h5>
+                    <ul class="list-unstyled d-flex flex-column gap-2 small">
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#">API Access</a></li>
+                        <li><a href="#">GitHub Repository</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <h5 class="footer-title fs-6">Legal</h5>
+                    <ul class="list-unstyled d-flex flex-column gap-2 small">
+                        <li><a href="#">Privacy Notice</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Data Ethics</a></li>
+                        <li><a href="#">Contact Support</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="mt-5 mb-4 border-secondary opacity-25">
+            <div class="text-center small">
+                © 2026 AI Misinformation Analyzer. Built for a safer internet.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AOS JS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+    <script>
+        // Init AOS
+        AOS.init({
+            duration: 800,
+            once: true,
+            offset: 100
+        });
+
+        // Counter Animation
+        function animateCounters() {
+            const counters = document.querySelectorAll('.counter');
+            counters.forEach(counter => {
+                const target = parseFloat(counter.getAttribute('data-target'));
+                const duration = 2000;
+                let currentStr = counter.innerText.replace(/,/g, '');
+                let current = parseFloat(currentStr) || 0;
+                
+                const difference = target - current;
+                if (difference <= 0) {
+                    counter.innerText = target <= 100 ? target.toFixed(1) : target.toLocaleString();
+                    return;
+                }
+                
+                let increment = difference / (duration / 16);
+                if (increment < 0.1) increment = 0.1;
+                
+                const updateCounter = () => {
+                    current += increment;
+                    if (current < target) {
+                        counter.innerText = target <= 100 ? current.toFixed(1) : Math.floor(current).toLocaleString();
+                        requestAnimationFrame(updateCounter);
+                    } else {
+                        counter.innerText = target <= 100 ? target.toFixed(1) : target.toLocaleString();
+                    }
+                };
+                updateCounter();
+            });
+        }
+
+        // Initialize from LocalStorage (resetting keys so previous caches don't load the old millions defaults)
+        let storedTotal = parseInt(localStorage.getItem('misinfo_v2_totalAnalyzed')) || 0;
+        let storedPrevented = parseInt(localStorage.getItem('misinfo_v2_prevented')) || 0;
+        let storedAccuracy = parseFloat(localStorage.getItem('misinfo_v2_accuracy')) || 0;
+
+        document.getElementById('statTotal').setAttribute('data-target', storedTotal);
+        document.getElementById('statPrevented').setAttribute('data-target', storedPrevented);
+        document.getElementById('statAccuracy').setAttribute('data-target', storedAccuracy);
+
+        function updateStats(isMisinfo) {
+            storedTotal++;
+            if(isMisinfo) storedPrevented++;
+            
+            if (storedAccuracy === 0 && storedTotal > 0) {
+                storedAccuracy = (98 + Math.random() * 1.5).toFixed(1);
+            }
+            
+            localStorage.setItem('misinfo_v2_totalAnalyzed', storedTotal);
+            localStorage.setItem('misinfo_v2_prevented', storedPrevented);
+            localStorage.setItem('misinfo_v2_accuracy', storedAccuracy);
+
+            document.getElementById('statTotal').setAttribute('data-target', storedTotal);
+            document.getElementById('statPrevented').setAttribute('data-target', storedPrevented);
+            document.getElementById('statAccuracy').setAttribute('data-target', storedAccuracy);
+            
+            animateCounters();
+        }
+
+        // Trigger counter animation when stats section is in view
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                animateCounters();
+                observer.disconnect();
+            }
+        });
+        observer.observe(document.querySelector('.stats-section'));
+
+        // Analysis Logic Simulation
+        document.getElementById('analyzeBtn').addEventListener('click', function() {
+            const input = document.getElementById('claimInput').value.trim();
+            if (!input) {
+                alert('Please enter a headline or claim to analyze.');
+                return;
+            }
+
+            // UI State change
+            this.disabled = true;
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('analysisContainer').style.display = 'none';
+
+            // Simulate Network Request
+            setTimeout(() => {
+                this.disabled = false;
+                document.getElementById('loadingSpinner').style.display = 'none';
+                
+                // Show panel
+                const panel = document.getElementById('analysisContainer');
+                panel.style.display = 'block';
+                
+                // Populate data
+                simulateAnalysis(input);
+                
+                // Scroll to result slightly delayed for layout calc
+                setTimeout(() => {
+                    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+
+            }, 2500);
+        });
+
+        function simulateAnalysis(text) {
+            // Very basic randomization for demo purposes
+            text = text.toLowerCase();
+            let score;
+            let statusObj;
+            let keywords = [];
+            let category = "General";
+
+            // Keyword triggers for category demo
+            if(text.includes('vaccine') || text.includes('cure') || text.includes('health') || text.includes('virus')) category = "Health";
+            if(text.includes('election') || text.includes('vote') || text.includes('president')) category = "Politics";
+            if(text.includes('crypto') || text.includes('stock') || text.includes('bank')) category = "Finance";
+
+            // Extract random keywords to highlight
+            const words = text.split(/\s+/).filter(w => w.length > 4);
+            for(let i=0; i<Math.min(3, words.length); i++) {
+                keywords.push(words[Math.floor(Math.random() * words.length)]);
+            }
+
+            // Pseudo-random scoring
+            const isMisinfo = Math.random() > 0.4;
+            if(isMisinfo) {
+                score = Math.floor(Math.random() * 35) + 10; // 10-45
+            } else {
+                score = Math.floor(Math.random() * 30) + 70; // 70-100
+            }
+
+            // DOM Elements
+            const scoreCircle = document.getElementById('scoreCircle');
+            const scoreText = document.getElementById('scoreText');
+            const badgeContainer = document.getElementById('statusBadgeContainer');
+            const explanation = document.getElementById('explanationText');
+            const catChip = document.getElementById('categoryChip');
+            const keywordsCont = document.getElementById('keywordsContainer');
+
+            // Set Category & Keywords
+            catChip.innerHTML = `<i class="fas fa-folder-open me-1"></i> ${category}`;
+            keywordsCont.innerHTML = keywords.length > 0 ? 
+                keywords.map(k => `<span class="keyword-chip">${k}</span>`).join('') :
+                '<span class="text-muted small">No specific suspicious triggers identified.</span>';
+
+            // Animate Score
+            scoreText.innerText = '0%';
+            const circumference = 263.89;
+            scoreCircle.style.strokeDashoffset = circumference;
+            
+            setTimeout(() => {
+                const offset = circumference - (score / 100) * circumference;
+                scoreCircle.style.strokeDashoffset = offset;
+                
+                let current = 0;
+                let inc = score / 30;
+                let intv = setInterval(() => {
+                    current += inc;
+                    if(current >= score) {
+                        current = score;
+                        clearInterval(intv);
+                    }
+                    scoreText.innerText = Math.floor(current) + '%';
+                }, 30);
+            }, 100);
+
+            // Set Status logic
+            if (score >= 70) {
+                scoreCircle.style.stroke = 'var(--success)';
+                scoreCircle.style.filter = 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.4))';
+                badgeContainer.innerHTML = `<div class="status-badge bg-success text-white">
+                    <i class="fas fa-check-circle"></i> Reliable
+                </div>`;
+                explanation.innerHTML = "<strong>Analysis:</strong> This claim aligns with verified data from trusted sources. No significant contradiction found in cross-referencing.";
+            } else if (score >= 40) {
+                scoreCircle.style.stroke = 'var(--warning)';
+                scoreCircle.style.filter = 'drop-shadow(0 0 6px rgba(245, 158, 11, 0.4))';
+                badgeContainer.innerHTML = `<div class="status-badge bg-warning text-dark">
+                    <i class="fas fa-exclamation-triangle"></i> Needs Verification
+                </div>`;
+                explanation.innerHTML = "<strong>Analysis:</strong> The claim contains mixed subjective elements or partially verified facts. It lacks full context and should be independently verified.";
+            } else {
+                scoreCircle.style.stroke = 'var(--danger)';
+                scoreCircle.style.filter = 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.4))';
+                badgeContainer.innerHTML = `<div class="status-badge bg-danger text-white">
+                    <i class="fas fa-times-circle"></i> Potential Misinformation
+                </div>`;
+                explanation.innerHTML = "<strong>Analysis:</strong> High likelihood of false or misleading information. Known fact-check databases flag several elements in this statement as debunked or synthetic.";
+            }
+
+            // Trigger LocalStorage save and UI update
+            setTimeout(() => {
+                updateStats(score <= 70);
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
