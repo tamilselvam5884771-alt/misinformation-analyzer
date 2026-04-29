@@ -22,6 +22,9 @@ app.get('/', (req, res) => {
   res.send('Backend Server is running.');
 });
 
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
 // POST API endpoint `/analyze`
 app.post('/analyze', async (req, res) => {
   try {
@@ -144,7 +147,12 @@ app.post('/analyze', async (req, res) => {
   }
 });
 
+// Catch-all to serve React index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

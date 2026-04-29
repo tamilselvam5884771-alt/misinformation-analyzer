@@ -1,4 +1,4 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 export async function analyzeClaim(text) {
   const res = await fetch(`${BACKEND_URL}/analyze`, {
